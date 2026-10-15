@@ -54,14 +54,15 @@ $CONFIG['admin']['name'] = "SystemAdmin Follk";
 $CONFIG['admin']['icon'] = "{$CONFIG['protocol']}://{$CONFIG['host']}/admin/skin/img/shortcut_icon.png";
 
 
+
 /*
  * Database
  */
 $CONFIG['db']                 = array();
-$CONFIG['db']['host']         = "208.113.244.114";//ou mysql.geminadas.com
-$CONFIG['db']['user']         = "geminada_site";
-$CONFIG['db']['password']     = "Sov@SGi=Bus{x";
-$CONFIG['db']['name']         = "geminada_site";
+$CONFIG['db']['host']         = "mysql"; // No Easypanel, se os serviços estão na mesma rede, o nome do serviço (ex: 'mysql') funciona como host
+$CONFIG['db']['user']         = "mysql";
+$CONFIG['db']['password']     = "Roheme22@123";
+$CONFIG['db']['name']         = "site";
 
 //$CONFIG['db']                 = array();
 //$CONFIG['db']['host']         = "187.45.210.78";
