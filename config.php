@@ -25,7 +25,7 @@ $CONFIG['tasks'] = true;
 /*
  * URL
  */
-$CONFIG['protocol'] = (strpos(strtolower($_SERVER['SERVER_PROTOCOL']), 'https') === false) ? 'http' : 'https';
+$CONFIG['protocol'] = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
 $CONFIG['host']     = str_replace(":{$_SERVER["SERVER_PORT"]}", "", $_SERVER['HTTP_HOST']);
 $CONFIG['script']   = $_SERVER['SCRIPT_NAME'];
 $CONFIG['params']   = $_SERVER['QUERY_STRING'];
