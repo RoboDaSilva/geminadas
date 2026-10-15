@@ -1,0 +1,13 @@
+<html>
+
+  <head>
+      <title> Cupom <img> </title>
+      <meta name="Cupom Desconto" content="25% na compra de qualquer projeto">
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  </head>
+ 
+  <body>
+      <img src="public_html/images/cupom.jpg">
+  </body>
+
+</html>

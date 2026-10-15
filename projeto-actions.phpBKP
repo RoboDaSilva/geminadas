@@ -1,0 +1,509 @@
+<?php
+
+require 'init.php';
+
+require_once 'admin/model/TamanhoTerreno.php';
+require_once 'admin/model/Planta.php';
+require_once 'admin/model/PlantaImagem.php';
+require_once 'admin/model/Fachada.php';
+require_once 'admin/model/FachadaImagem.php';
+require_once 'admin/model/Venda.php';
+require_once 'admin/model/Venda_Item_Fachada.php';
+require_once 'admin/model/Cidade.php';
+require_once 'admin/model/CidadeValor.php';
+require_once 'admin/model/Cliente.php';
+require_once 'admin/model/Opcionais.php';
+require_once 'admin/model/Cupons.php';
+require_once 'admin/model/Venda_Item_Opcional.php';
+
+if ($_POST) {
+    $action = trim($_POST["action"]);
+
+    unset($_POST["action"]);
+
+    switch ($action) {
+        case 'passo-1':
+            $tamanho_terrenos_id = (int) trim($_POST["tamanho_terrenos_id"]);
+            $plantas_tipos_id = (int) trim($_POST["plantas_tipos_id"]);
+
+            $where = array();
+            $where['tamanho_terrenos_id = ?'] = $tamanho_terrenos_id;
+            $where['plantas_tipos_id = ?'] = $plantas_tipos_id;
+
+            if (isset($_POST["quartos"]) && !empty($_POST["quartos"])) {
+                $quartos = (int) trim($_POST["quartos"]);
+                $where['quartos = ?'] = $quartos;
+            }
+            if (isset($_POST["suites"]) && !empty($_POST["suites"])) {
+                $suites = (int) trim($_POST["suites"]);
+                $where['suites = ?'] = $suites;
+            }
+            if (isset($_POST["banheiros"]) && !empty($_POST["banheiros"])) {
+                $banheiros = (int) trim($_POST["banheiros"]);
+                $where['banheiros = ?'] = $banheiros;
+            }
+
+            /* Instancia o model e procura os registros dos valores da cidade */
+            session_start();
+
+            /* Verifica se a Cidade-UF selecionado tem algum valor cadastrado */
+            /*
+              $model_cidade_valor = new Model_CidadeValor();
+              $cidade_valor = $model_cidade_valor->search(null, array('cidades_id = ?' => $_SESSION['id_cidade']));
+
+              $acrescimo = 0.00;
+              $desconto = 0.00;
+
+              if (is_array($cidade_valor)) {
+              $acrescimo = $cidade_valor[0]['acrescimo'];
+              $desconto = $cidade_valor[0]['desconto'];
+              } else {
+              $cidade_valor = false;
+              }
+             */
+
+            /* Busca o tamanho do terreno selecionado */
+            $model_tamanho_terreno = new Model_TamanhoTerreno();
+            $tamanho_terreno = $model_tamanho_terreno->find($tamanho_terrenos_id);
+
+            /* Instancia o model e procura os registros da planta */
+            $model_planta = new Model_Planta();
+            $plantas = $model_planta->search(null, $where);
+
+            /* Lista as imagens da planta e armazena em um array */
+            if (is_array($plantas)) {
+                $planta_imagem = new Model_PlantaImagem();
+
+                for ($i = 0; $i < count($plantas); $i++) {
+                    /* Calcula e formata o valor ja com o desconto ou com o acrescimo */
+//                    $plantas[$i]['valor'] = $plantas[$i]['tamanho'] * ($format->decodeInt($tamanho_terreno['valor']) + $acrescimo - $desconto);
+                    $plantas[$i]['valor'] = $plantas[$i]['tamanho'] * ($format->decodeInt($tamanho_terreno['valor']));
+                    $plantas[$i]['valor_formatado'] = $format->currency($plantas[$i]['valor'], 'floatToBr');
+                    $plantas[$i]['imagens'] = $planta_imagem->search(null, array("plantas_id = ?" => $plantas[$i]['id']));
+                }
+            }
+
+            $result = true;
+
+            if (!is_array($plantas)) {
+                $result = false;
+            }
+
+            /*
+              $cidade_estado = true;
+
+              if (!$_SESSION['cidade_estado']) {
+              $cidade_estado = false;
+              }
+             */
+
+            $response = array(
+                'result' => $result,
+                'itens' => $plantas,
+                'acrescimo' => $acrescimo,
+                'desconto' => $desconto,
+//                'cidade_estado' => $cidade_estado,
+                'error_message' => "Não existem plantas cadastradas para esta combinação de terrenos."
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'passo-2':
+            $plantas_id = (int) trim($_POST["plantas_id"]);
+
+            $model_fachada = new Model_Fachada();
+            $fachadas = $model_fachada->search(null, array('plantas_id = ?' => $plantas_id));
+
+            /* Lista as imagens da fachada e armazena em um array */
+            if (is_array($fachadas)) {
+                $fachada_imagem = new Model_FachadaImagem();
+
+                for ($i = 0; $i < count($fachadas); $i++) {
+                    /* Formata o valor */
+                    $fachadas[$i]['valor_formatado'] = $format->currency($fachadas[$i]['valor'], 'floatToBr');
+                    $fachadas[$i]['imagens'] = $fachada_imagem->search(null, array("fachadas_id = ?" => $fachadas[$i]['id']));
+                }
+            }
+
+            $result = true;
+
+            if (!is_array($fachadas)) {
+                $result = false;
+            }
+
+            $response = array(
+                'result' => $result,
+                'itens' => $fachadas,
+                'error_message' => "Não existem fachadas cadastradas para esta planta."
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'passo-3':
+            $data = $_POST;
+
+            $cidade_estado = true;
+            session_start();
+
+            //if (!$_SESSION['cidade_estado']) {
+               // $cidade_estado = false;
+               // $result = true;
+               // $venda = false;
+               // $fachada = false;
+               // $planta = false;
+              //  $opcionais = false;
+            //} else {
+
+                $id_fachada = (int) trim($data['id_fachada']);
+                unset($data['id_fachada']);
+
+                $result = true;
+
+                $model_venda = new Model_Venda();
+                $model_fachada = new Model_Fachada();
+                $model_planta = new Model_Planta();
+                $model_opcional = new Model_Opcionais();
+
+                /* Instância o model da fachada e da planta ########################################################### */
+                $fachada = $model_fachada->search(null, array('id = ?' => $id_fachada));
+                $planta = $model_planta->search(null, array('id = ?' => $fachada[0]['plantas_id']));
+
+                /* Lista as imagens da fachada e armazena em um array */
+                if (is_array($fachada)) {
+                    $valor_fachada = $fachada[0]['valor']; // Guarda o valor em uma variável antes de formatar para moeda brasileira
+                    /* Formata os valores para a moeda brasileira */
+                    $fachada[0]['valor'] = $format->currency($fachada[0]['valor'], 'floatToBr');
+
+                    $fachada_imagem = new Model_FachadaImagem();
+
+                    for ($i = 0; $i < count($fachada); $i++) {
+                        $fachada[$i]['imagens'] = $fachada_imagem->search(null, array("fachadas_id = ?" => $fachada[$i]['id']));
+                    }
+                }
+
+
+                /* Verifica se a Cidade-UF selecionado tem algum valor cadastrado */
+                $model_cidade_valor = new Model_CidadeValor();
+                $cidade_valor = $model_cidade_valor->search(null, array('cidades_id = ?' => $_SESSION['id_cidade']));
+
+                $acrescimo = 0.00;
+                $desconto = 0.00;
+
+                if (is_array($cidade_valor)) {
+                    $acrescimo = $cidade_valor[0]['acrescimo'];
+                    $desconto = $cidade_valor[0]['desconto'];
+                } else {
+                    $cidade_valor = false;
+                }
+
+                /* Lista as imagens da planta e armazena em um array */
+                if (is_array($planta)) {
+                    /* Busca o tamanho do terreno selecionado */
+                    $model_tamanho_terreno = new Model_TamanhoTerreno();
+                    $tamanho_terreno = $model_tamanho_terreno->find($planta[0]['tamanho_terrenos_id']);
+
+                    /* Formata os valores para a moeda brasileira */
+//                $planta[0]['valor'] = $planta[0]['valor'] + $acrescimo - $desconto;
+                    $planta[0]['valor'] = $planta[0]['tamanho'] * ($format->decodeInt($tamanho_terreno['valor']) + $acrescimo - $desconto);
+                    $valor_planta = $planta[0]['valor']; // Guarda o valor em uma variável antes de formatar para moeda brasileira
+                    $planta[0]['valor'] = $format->currency($planta[0]['valor'], 'floatToBr');
+
+                    $planta_imagem = new Model_PlantaImagem();
+
+                    for ($i = 0; $i < count($planta); $i++) {
+                        $planta[$i]['imagens'] = $planta_imagem->search(null, array("plantas_id = ?" => $planta[$i]['id']));
+                    }
+                }
+                /* Trata os dados da venda e logo em seguida grava os dados ################################################# */
+                session_start();
+                $_SESSION['projeto'] = uniqid(time());
+
+                $data['valor_final'] = $valor_fachada + $valor_planta;
+                $data['session'] = $_SESSION['projeto'];
+                $data['cidades_id'] = $_SESSION['id_cidade'];
+                $data['data'] = date('Y/m/d');
+
+                if ($model_venda->save($data)) {
+                    $venda = $model_venda->search(null, null, null, null, 'id DESC', 1);
+                    $id_venda = $venda[0]['id'];
+                    $venda[0]['valor_final_float'] = $venda[0]['valor_final'];
+                    $venda[0]['valor_final'] = $format->currency($venda[0]['valor_final'], 'floatToBr');
+                    $_SESSION['venda_id'] = $id_venda;
+
+                    $data_item['vendas_id'] = $id_venda;
+                    $data_item['fachadas_id'] = $id_fachada;
+
+                    $model_venda_item_fachada = new Model_Venda_Item_Fachada();
+
+                    if ($model_venda_item_fachada->save($data_item)) {
+                        $opcionais = $model_opcional->fetchAll(null, "nome");
+
+                        if (!is_array($venda)) {
+                            /* Caso de algum erro na listagem da venda os itens relacionados são deletados do BD */
+                            $venda_item_fachada = $model_venda_item_fachada->search(null, null, null, null, 'id DESC', 1);
+                            $id_item = $venda_item_fachada[0]['id'];
+                            $model_venda_item_fachada->delete($id_item);
+                            $model_venda->delete($id_venda);
+                            $result = false;
+                        }
+                    } else {
+                        /* Caso a venda seja salva com sucesso mas o item de erro na hora de salvar a venda ja é deletada do BD */
+                        $model_venda->delete($id_venda);
+                        $result = false;
+                    }
+                } else {
+                    $result = false;
+                }
+            //}
+
+            $response = array(
+                'result' => $result,
+                'itens_venda' => $venda,
+                'itens_fachada' => $fachada,
+                'itens_planta' => $planta,
+                'opcionais' => $opcionais,
+                'cidade_estado' => $cidade_estado,
+                'error_message' => "Não Foi possivel gerar o seu projeto."
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'gravar-opcionais':
+            $opcionais = $_POST['opcionais'];
+
+            session_start();
+
+            $model_venda_item_opcional = new Model_Venda_Item_Opcional();
+            $model_opcionais = new Model_Opcionais();
+            $model_venda = new Model_Venda();
+            $model_cupons = new Model_Cupons();
+
+            foreach ($opcionais as $value) {
+                $data_item['vendas_id'] = $_SESSION['venda_id'];
+                $data_item['opcionais_id'] = $value;
+
+                $model_venda_item_opcional->save($data_item);
+
+                $opcional = $model_opcionais->find($value);
+                $valor_opcionais += $opcional['valor'];
+            }
+
+            $desconto = $model_cupons->search(null, array('codigo = ?' => $_POST['cupom']));
+            $venda = $model_venda->find($_SESSION['venda_id']);
+
+
+            $cupons_usados = $model_venda->search(null, array('codigo_desconto = ?' => $_POST['cupom']));
+            $count_cupons = count($cupons_usados);
+
+
+            $data_venda['id'] = $_SESSION['venda_id'];
+            
+
+            if($count_cupons <= $desconto[0]['utilizacoes']){
+
+                $data_venda['desconto'] = $desconto[0]['valor'];
+                $data_venda['porcentagem'] = $desconto[0]['porcentagem'];
+                $data_venda['codigo_desconto'] = $_POST['cupom'];
+                
+                if($desconto[0]['valor'] > 0){
+                    $data_venda['valor_final'] = $venda['valor_final'] + $valor_opcionais - $desconto[0]['valor'];
+                }
+
+                if($desconto[0]['porcentagem'] > 0){
+                    $data_venda['valor_final'] = $venda['valor_final'] + $valor_opcionais;   
+                    $valor_desconto = ($desconto[0]['porcentagem'] / 100 ) * $data_venda['valor_final'];
+                    $data_venda['valor_final'] = $venda['valor_final'] + $valor_opcionais - $valor_desconto;
+                }
+
+
+            } else {
+                $data_venda['valor_final'] = $venda['valor_final'] + $valor_opcionais;                
+            }
+
+            //$data_venda['valor_final'] = $venda['valor_final'] + $valor_opcionais;
+            $model_venda->save($data_venda);
+
+            $response = array(
+                'result' => true
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'ler_cidades':
+            $estado = $_POST["estado"];
+
+            $model_cidade = new Model_Cidade();
+
+            $cidades = $model_cidade->search(null, array('estado = ?' => $estado), null, null, 'id');
+
+            $result = true;
+
+            if (!is_array($cidades)) {
+                $result = false;
+            }
+
+            $response = array(
+                'result' => $result,
+                'cidades' => $cidades
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'gravar-cidade':
+            $id_cidade = $_POST['cidade'];
+
+            $model_cidade = new Model_Cidade();
+
+            $cidade = $model_cidade->find($id_cidade);
+
+            session_start();
+
+            $_SESSION['id_cidade'] = $cidade['id'];
+            $_SESSION['cidade_estado'] = $cidade['cidade'] . " - " . $cidade['estado'];
+
+            $response = array(
+                'result' => true,
+                'cidade_estado' => $_SESSION['cidade_estado']
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'efetuar-login':
+            $email = trim($_POST['email']);
+            $senha = md5(trim(addslashes($_POST['senha'])));
+            $permission = null;
+
+            $cliente = $db_adapter->search("SELECT * FROM clientes WHERE email = '{$email}' AND senha = '{$senha}' LIMIT 1");
+
+            session_start();
+
+            if (is_array($cliente)) {
+                $_SESSION['clientes_id'] = $cliente[0]['id'];
+
+                if (isset($_POST['gerar_venda'])) {
+                    $model_venda = new Model_Venda();
+                    $data['id'] = $_SESSION['venda_id'];
+                    $data['clientes_id'] = $_SESSION['clientes_id'];
+
+                    $model_venda->save($data);
+                }
+
+                $message = "Login efetuado com sucesso";
+
+                $permission = true;
+            } else {
+                $message = "Dados inválidos!";
+                $permission = false;
+            }
+
+            $response = array(
+                'result' => true,
+                'message' => $message,
+                'permissao' => $permission
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'logout':
+            session_start();
+
+            session_destroy();
+
+            $response = array(
+                'result' => true
+            );
+
+            echo json_encode($response);
+
+            break;
+
+        case 'cadastrar':
+            $data = $_POST;
+
+            if (isset($data['estado'])) {
+                unset($data['estado']);
+            }
+
+            $result = true;
+
+            $model_cliente = new Model_Cliente();
+
+            session_start();
+
+            if (isset($data['id'])) {
+                /* ALTERAR CADASTRO */
+
+                if ($model_cliente->save($data)) {
+                    $message = "Dados atualizados com sucesso!";
+                } else {
+                    $message = "Erro ao atualizar os dados";
+                    $result = false;
+                }
+            } else {
+                /* NOVO CADASTRO */
+
+                $data['senha'] = md5(trim(addslashes($data['senha'])));
+
+                $gerar_venda = false;
+
+                if (isset($data['gerar_venda'])) {
+                    $gerar_venda = true;
+                    unset($data['gerar_venda']);
+                }
+                if (isset($data['senha2'])) {
+                    unset($data['senha2']);
+                }
+
+                if ($model_cliente->save($data)) {
+                    /* Busca o id do cliente cadastrado */
+                    $model_cliente = new Model_Cliente();
+                    $cliente_new = $model_cliente->search(null, null, null, null, 'id DESC', 1);
+
+                    $_SESSION['clientes_id'] = $cliente_new[0]['id'];
+
+                    /* Insere o id do cliente no registro da venda */
+                    if ($gerar_venda) {
+                        $model_venda = new Model_Venda();
+                        $data_venda['id'] = $_SESSION['venda_id'];
+                        $data_venda['clientes_id'] = $_SESSION['clientes_id'];
+
+                        $model_venda->save($data_venda);
+                    }
+
+                    if (isset($data['id'])) {
+                        $message = "Dados atualizados com sucesso!";
+                    } else {
+                        $message = "Você foi cadastrado com sucesso!";
+                    }
+                } else {
+                    $message = "Erro ao se cadastrar";
+                    $result = false;
+                }
+            }
+
+            $response = array(
+                'result' => $result,
+                'message' => $message,
+                'data' => $data
+            );
+
+            echo json_encode($response);
+
+            break;
+    }
+}
+?>

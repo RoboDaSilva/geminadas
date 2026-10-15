@@ -1,0 +1,66 @@
+# encoding
+AddDefaultCharset UTF-8
+# DefaultLanguage
+DefaultLanguage pt-BR
+
+RewriteEngine On
+RewriteCond %{HTTPS} !on
+RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+
+# Note: It’s also recommended to enable HTTP Strict Transport Security (HSTS)
+# on your HTTPS website to help prevent man-in-the-middle attacks.
+# See https://developer.mozilla.org/en-US/docs/Web/Security/HTTP_strict_transport_security
+<IfModule mod_headers.c>
+    # Remove "includeSubDomains" if you don't want to enforce HSTS on all subdomains
+    Header always set Strict-Transport-Security "max-age=31536000;includeSubDomains"
+</IfModule>
+
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^http://geminadas.com/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://geminadas.com$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://www.gemindas.com/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://www.geminadas.com$      [NC]
+RewriteCond %{REQUEST_URI} !(skin|css|js|less|img|fonts|uploads)
+RewriteCond %{REQUEST_URI} !(\.css|\.js|\.png|\.jpg|\.gif|robots\.txt)$ [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteCond %{HTTP_HOST} ^geminadas\.com\.br$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.geminadas\.com\.br$
+
+RewriteRule .*\.(jpg|jpeg|gif|png|bmp)$ - [F,NC]
+
+RewriteRule ^/                                          index.php
+RewriteRule ^quemsomos/?$                               quemsomos\.php [NC] 
+RewriteRule ^servicos/?$                               	servicos\.php [NC] 
+RewriteRule ^nossodiferencial/?$                        nossodiferencial\.php [NC]
+RewriteRule ^como-comprar-pagar/?$                      comocomprarpagar\.php [NC]
+RewriteRule ^parceiros/?$                        		parceiros\.php [NC]
+RewriteRule ^contato/?$                        			contato\.php [NC]
+RewriteRule ^esqueci-minha-senha/?$                     esqueci-minha-senha\.php [NC]
+RewriteRule ^pedidos/?$                        			pedidos\.php [NC]
+RewriteRule ^login/?$                        			login\.php [NC]
+RewriteRule ^dados-cadastrais/?$                        dados-cadastrais\.php [NC]
+RewriteRule ^checkout/?$                        		checkout_payment\.php [NC]
+RewriteRule ^fachada/?([0-9-]+)?$                       fachada\.php\?id=$1 [NC] 
+RewriteRule ^agenda/?$                                  agenda-online\.php [NC]
+RewriteRule ^planta/?([0-9-]+)?$                        planta\.php\?id=$1 [NC]  
+RewriteRule ^cursos/?([a-z0-9-]+)?/?$                   curso\.php\?slug=$1 [NC] 
+RewriteRule ^sobre_a_minds/?$                           aminds\.php [NC] 
+RewriteRule ^quero_desconto/?$                          querodesconto\.php [NC]
+RewriteRule ^quero_desconto_ok/?$                       querodesconto_ok\.php [NC] 
+RewriteRule ^seja_um_franqueado/?$                      sejaumfranqueado\.php [NC] 
+RewriteRule ^login/?$                                   login\.php [NC] 
+RewriteRule ^clube_de_beneficios/?$                     clubedebeneficios\.php [NC] 
+RewriteRule ^webmail/?$                                 webmail\.php [NC] 
+RewriteRule ^fale_conosco/?$                            faleconosco\.php [NC] 
+RewriteRule ^descubra/?$                                descubra\.php [NC] 
+RewriteRule ^pratique/?$                                pratique\.php [NC] 
+RewriteRule ^galerias_de_imagens/?$                     galeriasimagens\.php [NC] 
+RewriteRule ^evento_imagens/?([a-z0-9-]+)?/?$           galeriaimagem\.php\?slug=$1 [NC] 
+RewriteRule ^galerias_de_videos/?$                      galeriasvideos\.php [NC] 
+RewriteRule ^noticias/?$                                noticia\.php [NC] 
+RewriteRule ^noticia/?([0-9-]+)?$                       noticia\.php\?id=$1 [NC] 
+RewriteRule ^checkout/?([a-z0-9-]+)?/?$                 checkout\.php [NC]
+RewriteRule ^pagseguro/?([a-z0-9-]+)?/?$                pagseguro\.php [NC]
+RewriteRule ^academia$                                  "http\:\/\/minds\.didaxis\.com\.br\/portal\/default\.asp\?dLayout\=minds\&WorkspaceID\=258" [R=301,L]

@@ -1,0 +1,46 @@
+<?php
+include_once 'admin/model/Empresa.php';
+include_once 'admin/model/Servico.php';
+
+$model_servico = new Model_Servico();
+$servicos = $model_servico->fetchAll();
+?>
+
+<div class="ornament-rodape-listrado"></div>
+
+<div class="rodape-box">
+    <div class="container">
+        <div class="row clearfix">
+            <div class="col-md-12 column">
+                <div class="row clearfix">
+                    <div class="col-sm-6 col-md-8 column rodape-box-item">
+                        <?php if (is_array($empresa)) { ?>
+                            <h3>Institucional</h3>
+                            <p>
+                                <?php echo substr(strip_tags($empresa['institucional']), 0, 450); ?>
+                            </p>
+                        <?php } ?>
+
+                    </div>
+
+                    <div class="col-sm-6 col-md-4 column rodape-box-item">
+                        <h3>Contato</h3>
+                        <p><span><i class="fa fa-phone-square"></i></span> Telefone: <?=$empresa['telefone']?></p>
+                        <p><span><i class="fa fa-envelope"></i></span> E-mail: <?=$empresa['email']?></p><br>
+                        <img src="img/pagamento.png" class="img-responsive">
+                    </div>
+
+                    <p>
+                </div>
+                <div class="col-md-12 ">
+                <iframe src="https://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2Fprojetogeminadas&width=280&layout=standard&action=like&size=large&show_faces=true&share=true&height=80&appId" width="280" height="80" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="" allow="encrypted-media"></iframe>
+            </p>
+            </div>
+            <p>
+            <div class="col-md-12 rodape-direitos">
+                <small>Geminadas.com. Todos os direitos reservados.</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
