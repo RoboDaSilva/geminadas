@@ -61,7 +61,7 @@ $CONFIG['db']                 = array();
 $CONFIG['db']['host']         = "mysql"; // No Easypanel, se os serviços estão na mesma rede, o nome do serviço (ex: 'mysql') funciona como host
 $CONFIG['db']['user']         = "mysql";
 $CONFIG['db']['password']     = "Roheme22@123";
-$CONFIG['db']['name'] = "site";
+$CONFIG['db']['name'] = "geminada_site";
 
 //$CONFIG['db']                 = array();
 //$CONFIG['db']['host']         = "187.45.210.78";
